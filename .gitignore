@@ -1,0 +1,10 @@
+*.exe
+*.so
+*.o
+*.a
+*.dll
+*.pdb
+*.log
+clonedir/*
+build/*
+*.csv
