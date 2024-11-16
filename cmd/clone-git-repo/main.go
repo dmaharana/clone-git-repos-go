@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/your-username/clone-git-repo/internal/pkg/config"
-	"github.com/your-username/clone-git-repo/internal/pkg/csv"
-	"github.com/your-username/clone-git-repo/internal/pkg/git"
+	"github.com/dmaharana/clone-git-repo/internal/pkg/config"
+	"github.com/dmaharana/clone-git-repo/internal/pkg/csv"
+	"github.com/dmaharana/clone-git-repo/internal/pkg/git"
 )
 
 // Build information. Populated at build-time.

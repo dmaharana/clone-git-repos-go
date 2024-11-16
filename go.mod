@@ -1,4 +1,4 @@
-module github.com/your-username/clone-git-repo
+module github.com/dmaharana/clone-git-repo
 
 go 1.22.0
 
