@@ -8,9 +8,10 @@ A Go-based CLI tool that reads repository URLs from a CSV file and clones them i
 - Support for both HTTPS and SSH repository URLs
 - Authentication support for private repositories
 - Parallel repository cloning
-- Automatic retry mechanism for failed clones
+- Automatic retry mechanism for failed clones (up to 3 retries)
 - Error handling for common Git operations
 - Branch checkout for all available branches
+- Configuration via INI file or command-line arguments
 
 ## Prerequisites
 
@@ -28,7 +29,47 @@ cd clone-git-repo
 
 # Build the project
 go build ./...
+
+# Copy the example config file (optional)
+cp config.ini.example config.ini
 ```
+
+## Configuration
+
+The tool supports two methods of configuration:
+
+### 1. INI Configuration File (Recommended)
+
+Copy the example configuration file and modify it according to your needs:
+
+```bash
+cp config.ini.example config.ini
+```
+
+Example `config.ini`:
+```ini
+[credentials]
+username = your_username_here
+token = your_token_here
+
+[paths]
+clone_dir = clonedir
+csv_file = repositories.csv
+
+[logging]
+log_dir = logs
+log_max_size = 10485760  # 10MB in bytes
+```
+
+### 2. Command Line Arguments
+
+If no config file is found or if you prefer using command-line arguments:
+
+- `-c`: Path to config file (default: "config.ini")
+- `-f`: Path to the CSV file containing repository URLs
+- `-d`: Directory where repositories will be cloned
+- `-u`: Username for authentication (required for private repositories)
+- `-t`: Token for authentication (required for private repositories)
 
 ## Usage
 
@@ -40,16 +81,16 @@ git@github.com:user/repo2.git
 ```
 
 2. Run the tool:
+
+Using config file:
+```bash
+go run cmd/clone-git-repo/main.go
+```
+
+Using command line arguments:
 ```bash
 go run cmd/clone-git-repo/main.go -f repositories.csv -d clonedir -u username -t token
 ```
-
-### Command Line Arguments
-
-- `-f`: Path to the CSV file containing repository URLs (required)
-- `-d`: Directory where repositories will be cloned (required)
-- `-u`: Username for authentication (required for private repositories)
-- `-t`: Token for authentication (required for private repositories)
 
 ## Error Handling
 
@@ -58,6 +99,7 @@ The tool includes robust error handling for common scenarios:
 - Directory already exists
 - Network issues
 - Invalid repository URLs
+- Automatic retries for failed clone attempts
 
 ## Contributing
 
