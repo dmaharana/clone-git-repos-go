@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -148,8 +149,12 @@ func checkError(err error) int {
 // handle authentication error
 func handleAuthenticationError(url string, repoDir string, cfg *config.Config, rs *repostatus.RepoStatus) int {
 	// Add username and token to the URL
+	// escape special characters in username and token
+	escapedUsername := url.PathEscape(cfg.Username)
+	escapedToken := url.PathEscape(cfg.Token)
+
 	// remove the "https://" prefix
-	urlWithCredentials := fmt.Sprintf("%s://%s:%s@%s", "https", cfg.Username, cfg.Token, strings.TrimPrefix(url, "https://"))
+	urlWithCredentials := fmt.Sprintf("%s://%s:%s@%s", "https", escapedUsername, escapedToken, strings.TrimPrefix(url, "https://"))
 	if err := git.CloneRepo(urlWithCredentials, repoDir, rs); err != nil {
 		log.Printf("Error cloning repository %s: %v\n", url, err)
 		return checkError(err)
