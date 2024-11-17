@@ -8,3 +8,6 @@
 clonedir/*
 build/*
 *.csv
+
+# Log files and directories
+logs/

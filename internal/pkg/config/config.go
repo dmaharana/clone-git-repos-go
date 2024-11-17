@@ -5,11 +5,14 @@ import (
 	"log"
 )
 
+// Config holds the application configuration
 type Config struct {
-	Username string
-	Token    string
-	RepoCSV  string
-	CloneDir string
+	RepoCSV   string
+	CloneDir  string
+	Username  string
+	Token     string
+	LogDir    string
+	LogMaxSize int64
 }
 
 const (
@@ -19,28 +22,29 @@ const (
 
 // ParseFlags parses command line flags and returns a Config struct
 func ParseFlags() *Config {
-	config := &Config{}
-	
-	flag.StringVar(&config.Username, "u", "", "Username")
-	flag.StringVar(&config.Token, "t", "", "Token")
-	flag.StringVar(&config.RepoCSV, "f", "", "CSV file")
-	flag.StringVar(&config.CloneDir, "d", "", "Clone directory")
+	cfg := &Config{}
+
+	flag.StringVar(&cfg.RepoCSV, "f", "", "CSV file")
+	flag.StringVar(&cfg.CloneDir, "d", "", "Clone directory")
+	flag.StringVar(&cfg.Username, "u", "", "Username")
+	flag.StringVar(&cfg.Token, "t", "", "Token")
+	flag.StringVar(&cfg.LogDir, "logdir", "logs", "Log directory")
+	flag.Int64Var(&cfg.LogMaxSize, "logsize", 10*1024*1024, "Maximum log file size in bytes")
+
 	flag.Parse()
 
-	if config.Username == "" || config.Token == "" {
-		// print usage and exit
-		flag.Usage()
+	// set default values
+	if cfg.RepoCSV == "" {
+		cfg.RepoCSV = DefaultCSVFile
+	}
+	
+	if cfg.CloneDir == "" {
+		cfg.CloneDir = DefaultCloneDir
+	}
+	
+	if cfg.Username == "" || cfg.Token == "" {
 		log.Fatal("Username and Token are required")
 	}
 
-	// set default values
-	if config.RepoCSV == "" {
-		config.RepoCSV = DefaultCSVFile
-	}
-
-	if config.CloneDir == "" {
-		config.CloneDir = DefaultCloneDir
-	}
-
-	return config
+	return cfg
 }
