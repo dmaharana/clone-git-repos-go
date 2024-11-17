@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
+	"net/url"
 
 	"github.com/dmaharana/clone-git-repo/internal/pkg/config"
 	"github.com/dmaharana/clone-git-repo/internal/pkg/csv"
@@ -29,9 +29,9 @@ const (
 	DirectoryExistsError
 	UnknownError
 
-	AuthenticationErrorString    = "authentication required"
+	AuthenticationErrorString   = "authentication required"
 	DirectoryExistsErrorString  = "repository already exists"
-	ResultFileName               = "clone-git-repo-result.csv"
+	ResultFileName              = "clone-git-repo-result.csv"
 	DirectoryExistsErrorMessage = "Directory already exists, remove it and try again"
 
 	MaxRetries = 3
@@ -147,16 +147,15 @@ func checkError(err error) int {
 }
 
 // handle authentication error
-func handleAuthenticationError(url string, repoDir string, cfg *config.Config, rs *repostatus.RepoStatus) int {
+func handleAuthenticationError(rurl string, repoDir string, cfg *config.Config, rs *repostatus.RepoStatus) int {
 	// Add username and token to the URL
-	// escape special characters in username and token
-	escapedUsername := url.PathEscape(cfg.Username)
-	escapedToken := url.PathEscape(cfg.Token)
+	// escape special characters in the token
+	token := url.QueryEscape(cfg.Token)
 
 	// remove the "https://" prefix
-	urlWithCredentials := fmt.Sprintf("%s://%s:%s@%s", "https", escapedUsername, escapedToken, strings.TrimPrefix(url, "https://"))
+	urlWithCredentials := fmt.Sprintf("%s://%s:%s@%s", "https", cfg.Username, token, strings.TrimPrefix(rurl, "https://"))
 	if err := git.CloneRepo(urlWithCredentials, repoDir, rs); err != nil {
-		log.Printf("Error cloning repository %s: %v\n", url, err)
+		log.Printf("Error cloning repository %s: %v\n", rurl, err)
 		return checkError(err)
 	}
 	return 0
