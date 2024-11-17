@@ -1,0 +1,11 @@
+[credentials]
+username = your_username_here
+token = your_token_here
+
+[paths]
+clone_dir = clonedir
+csv_file = repositories.csv
+
+[logging]
+log_dir = logs
+log_max_size = 10485760  # 10MB in bytes

@@ -11,3 +11,4 @@ build/*
 
 # Log files and directories
 logs/
+*.ini

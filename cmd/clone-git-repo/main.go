@@ -32,6 +32,8 @@ const (
 	DirectoryExistsErrorString  = "repository already exists"
 	ResultFileName               = "clone-git-repo-result.csv"
 	DirectoryExistsErrorMessage = "Directory already exists, remove it and try again"
+
+	MaxRetries = 3
 )
 
 var log *logger.Logger
@@ -85,12 +87,11 @@ func main() {
 		repoDir := filepath.Join(cfg.CloneDir, repoName)
 
 		errCount := 0
-		maxRetries := 3
 		errorCode := cloneRepository(url, repoDir, rs)
 		for {
 			if errorCode != 0 {
 				errCount++
-				if errCount > maxRetries {
+				if errCount > MaxRetries {
 					log.Printf("Error cloning repository %s: %v\n", url, err)
 					break
 				}
