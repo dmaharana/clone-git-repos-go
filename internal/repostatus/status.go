@@ -7,15 +7,16 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/dmaharana/clone-git-repo/internal/pkg/logger"
 	"github.com/olekukonko/tablewriter"
 )
 
 // RepoStatus represents the status information of a Git repository
 type RepoStatus struct {
-	RepoPath     string
-	IsCloned     bool
-	BranchCount  int
-	TagCount     int
+	RepoPath    string
+	IsCloned    bool
+	BranchCount int
+	TagCount    int
 }
 
 // GetRepoStatus retrieves the status information for a given repository path
@@ -78,9 +79,9 @@ func PrintStatusTable(statuses []*RepoStatus) {
 		if status.IsCloned {
 			clonedStatus = "Yes"
 		}
-		
+
 		table.Append([]string{
-			status.RepoPath,
+			logger.MaskSensitive(status.RepoPath),
 			clonedStatus,
 			fmt.Sprintf("%d", status.BranchCount),
 			fmt.Sprintf("%d", status.TagCount),
@@ -112,7 +113,7 @@ func WriteStatusToCSV(statuses []*RepoStatus, filename string) error {
 
 	for _, status := range statuses {
 		err := writer.Write([]string{
-			status.RepoPath,
+			logger.MaskSensitive(status.RepoPath),
 			fmt.Sprintf("%t", status.IsCloned),
 			fmt.Sprintf("%d", status.BranchCount),
 			fmt.Sprintf("%d", status.TagCount),

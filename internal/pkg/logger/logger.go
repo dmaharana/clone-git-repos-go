@@ -5,8 +5,19 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"time"
 )
+
+var (
+	// Regex to match credentials in URLs: https://user:pass@host
+	urlCredsRegex = regexp.MustCompile(`(https?://)([^:]+):([^@]+)@`)
+)
+
+func MaskSensitive(s string) string {
+	// Mask credentials in URLs
+	return urlCredsRegex.ReplaceAllString(s, "$1$2:****@")
+}
 
 // Standard log flags
 const (
@@ -28,7 +39,7 @@ type Logger struct {
 // Config holds logger configuration
 type Config struct {
 	LogDir     string
-	MaxSize    int64  // in bytes
+	MaxSize    int64 // in bytes
 	TimeFormat string
 }
 
@@ -87,27 +98,32 @@ func (l *Logger) Close() error {
 
 // Printf formats and prints a message to the log
 func (l *Logger) Printf(format string, v ...interface{}) {
-	l.Output(2, fmt.Sprintf(format, v...))
+	msg := fmt.Sprintf(format, v...)
+	l.Output(2, MaskSensitive(msg))
 }
 
 // Print prints a message to the log
 func (l *Logger) Print(v ...interface{}) {
-	l.Output(2, fmt.Sprint(v...))
+	msg := fmt.Sprint(v...)
+	l.Output(2, MaskSensitive(msg))
 }
 
 // Println prints a message to the log with a newline
 func (l *Logger) Println(v ...interface{}) {
-	l.Output(2, fmt.Sprintln(v...))
+	msg := fmt.Sprintln(v...)
+	l.Output(2, MaskSensitive(msg))
 }
 
 // Fatal prints a message and calls os.Exit(1)
 func (l *Logger) Fatal(v ...interface{}) {
-	l.Output(2, fmt.Sprint(v...))
+	msg := fmt.Sprint(v...)
+	l.Output(2, MaskSensitive(msg))
 	os.Exit(1)
 }
 
 // Fatalf formats and prints a message and calls os.Exit(1)
 func (l *Logger) Fatalf(format string, v ...interface{}) {
-	l.Output(2, fmt.Sprintf(format, v...))
+	msg := fmt.Sprintf(format, v...)
+	l.Output(2, MaskSensitive(msg))
 	os.Exit(1)
 }

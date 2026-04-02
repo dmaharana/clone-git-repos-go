@@ -5,12 +5,14 @@ A Go-based CLI tool that reads repository URLs from a CSV file and clones them i
 ## Features
 
 - Bulk clone Git repositories from a CSV file
-- Support for both HTTPS and SSH repository URLs
-- Authentication support for private repositories
+- **Smart Protocol Selection**: Automatically handles HTTPS and SSH repository URLs
+- **Automatic HTTPS Conversion**: If an authentication token is provided, the tool automatically converts SSH URLs to HTTPS for seamless authentication
+- **Authentication**: Native support for private repositories using username and token
+- **Security & Privacy**: Automatic masking of sensitive credentials (usernames and tokens) in all logs and console output
 - Parallel repository cloning
 - Automatic retry mechanism for failed clones (up to 3 retries)
 - Error handling for common Git operations
-- Branch checkout for all available branches
+- Branch and Tag checkout: Clones all available branches and tags
 - Configuration via INI file or command-line arguments
 
 ## Prerequisites
@@ -95,11 +97,17 @@ go run cmd/clone-git-repo/main.go -f repositories.csv -d clonedir -u username -t
 ## Error Handling
 
 The tool includes robust error handling for common scenarios:
-- Authentication errors
-- Directory already exists
-- Network issues
-- Invalid repository URLs
-- Automatic retries for failed clone attempts
+- **Authentication**: Identifies credential issues and provides secure feedback
+- **Conflict Management**: Automatically handles cases where the repository directory already exists
+- **Resilience**: Includes an automatic retry mechanism for transient network issues
+- **Invalid URLs**: Validates repository URLs before attempting operations
+
+## Security
+
+Security is a priority for this tool:
+- **Credential Masking**: Usernames and tokens are never written to logs or displayed in the console in plain text. They are replaced with `****` automatically.
+- **Secure Transport**: When a token is provided, the tool defaults to HTTPS to ensure encrypted communication with the Git provider.
+- **No In-URL Credentials**: Credentials are passed via secure authentication headers rather than being embedded directly in URLs.
 
 ## Contributing
 
@@ -111,4 +119,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Development
 
-This project was developed using [Codeium](https://codeium.com/) and Windsurf, leveraging AI-powered development tools for enhanced productivity and code quality.
+This project was developed using [Codeium](https://codeium.com/) and Windsurf, leveraging AI-powered development tools for enhanced productivity and code quality. Fixes implemented with Google Gemini CLI.

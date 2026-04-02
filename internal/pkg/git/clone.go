@@ -8,6 +8,8 @@ import (
 	"github.com/dmaharana/clone-git-repo/internal/repostatus"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/transport"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
 )
 
 const (
@@ -15,15 +17,43 @@ const (
 )
 
 // CloneRepo clones a Git repository and checks out all its branches
-func CloneRepo(url string, dir string, rs *repostatus.RepoStatus) error {
+func CloneRepo(url string, dir string, rs *repostatus.RepoStatus, username, token string) error {
+	var auth transport.AuthMethod
+	cloneURL := url
+
+	// If token is provided, default to HTTPS and use authentication
+	if token != "" {
+		if strings.HasPrefix(url, "git@") {
+			// Convert SSH to HTTPS
+			// git@github.com:user/repo.git -> https://github.com/user/repo.git
+			cloneURL = strings.Replace(url, ":", "/", 1)
+			cloneURL = strings.Replace(cloneURL, "git@", "https://", 1)
+		} else if !strings.HasPrefix(url, "https://") && !strings.HasPrefix(url, "http://") {
+			// If it doesn't have a protocol, assume it's a path and try to make it HTTPS if it looks like one
+			// This is a bit speculative, but common for some inputs
+			if strings.Contains(url, "github.com") || strings.Contains(url, "gitlab.com") || strings.Contains(url, "bitbucket.org") {
+				cloneURL = "https://" + url
+			}
+		}
+
+		if strings.HasPrefix(cloneURL, "https://") || strings.HasPrefix(cloneURL, "http://") {
+			auth = &http.BasicAuth{
+				Username: username,
+				Password: token,
+			}
+		}
+	}
+
 	// clone repo
 	r, err := git.PlainClone(dir, false, &git.CloneOptions{
-		URL:      url,
+		URL:      cloneURL,
+		Auth:     auth,
 		Progress: os.Stdout,
 	})
 
 	if err != nil {
-		log.Println("Error cloning repo:", err)
+		// Do not log the error here if it's authentication related,
+		// let the caller handle it to avoid logging sensitive URLs if any
 		return err
 	}
 
@@ -131,7 +161,7 @@ func findAllTags(r *git.Repository) ([]string, error) {
 		tname := t.Name().String()
 		count++
 		tagList = append(tagList, tname)
-		
+
 		return nil
 	})
 

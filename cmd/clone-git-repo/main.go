@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"net/url"
 
 	"github.com/dmaharana/clone-git-repo/internal/pkg/config"
 	"github.com/dmaharana/clone-git-repo/internal/pkg/csv"
@@ -88,12 +87,12 @@ func main() {
 		repoDir := filepath.Join(cfg.CloneDir, repoName)
 
 		errCount := 0
-		errorCode := cloneRepository(url, repoDir, rs)
+		errorCode := cloneRepository(url, repoDir, rs, cfg)
 		for {
 			if errorCode != 0 {
 				errCount++
 				if errCount > MaxRetries {
-					log.Printf("Error cloning repository %s: %v\n", url, err)
+					log.Printf("Error cloning repository %s: code %d\n", url, errorCode)
 					break
 				}
 			} else {
@@ -103,9 +102,10 @@ func main() {
 			case AuthenticationError:
 				errorCode = handleAuthenticationError(url, repoDir, cfg, rs)
 			case DirectoryExistsError:
-				errorCode = handleDirectoryExistsError(url, repoDir, rs)
+				errorCode = handleDirectoryExistsError(url, repoDir, cfg, rs)
 			default:
-				break
+				// Exit the loop for unknown errors
+				errCount = MaxRetries + 1
 			}
 		}
 
@@ -127,8 +127,8 @@ func main() {
 }
 
 // perform git clone and return error
-func cloneRepository(url string, repoDir string, rs *repostatus.RepoStatus) int {
-	err := git.CloneRepo(url, repoDir, rs)
+func cloneRepository(url string, repoDir string, rs *repostatus.RepoStatus, cfg *config.Config) int {
+	err := git.CloneRepo(url, repoDir, rs, cfg.Username, cfg.Token)
 	if err != nil {
 		return checkError(err)
 	}
@@ -136,40 +136,56 @@ func cloneRepository(url string, repoDir string, rs *repostatus.RepoStatus) int 
 }
 
 func checkError(err error) int {
-	switch err.Error() {
-	case AuthenticationErrorString:
-		return AuthenticationError
-	case DirectoryExistsErrorString:
-		return DirectoryExistsError
-	default:
-		return UnknownError
+	if err == nil {
+		return 0
 	}
+	errStr := strings.ToLower(err.Error())
+	if strings.Contains(errStr, "auth") || strings.Contains(errStr, "authentication") || strings.Contains(errStr, "credentials") {
+		return AuthenticationError
+	}
+	if strings.Contains(errStr, "exists") || strings.Contains(errStr, "already exists") {
+		return DirectoryExistsError
+	}
+	return UnknownError
 }
 
 // handle authentication error
 func handleAuthenticationError(rurl string, repoDir string, cfg *config.Config, rs *repostatus.RepoStatus) int {
-	// Add username and token to the URL
-	// escape special characters in the token
-	token := url.QueryEscape(cfg.Token)
-
-	// remove the "https://" prefix
-	urlWithCredentials := fmt.Sprintf("%s://%s:%s@%s", "https", cfg.Username, token, strings.TrimPrefix(rurl, "https://"))
-	if err := git.CloneRepo(urlWithCredentials, repoDir, rs); err != nil {
-		log.Printf("Error cloning repository %s: %v\n", rurl, err)
-		return checkError(err)
+	// If authentication failed even with a token, we stop retrying
+	if cfg.Token != "" {
+		return AuthenticationError
 	}
-	return 0
+
+	return AuthenticationError
 }
 
 // handle if directory already exists, remove it and try again
-func handleDirectoryExistsError(url string, repoDir string, rs *repostatus.RepoStatus) int {
+func handleDirectoryExistsError(url string, repoDir string, cfg *config.Config, rs *repostatus.RepoStatus) int {
 	// Remove the partially cloned directory
 	os.RemoveAll(repoDir)
 
 	// Clone the repository into the directory
-	if err := git.CloneRepo(url, repoDir, rs); err != nil {
-		log.Printf("Error cloning repository %s: %v\n", url, err)
-		return checkError(err)
+	return cloneRepository(url, repoDir, rs, cfg)
+}
+
+// go through all the repositories in the clonedir and save the developer productivity metrics in a csv file
+func calculateMetrics(cfg *config.Config) {
+	// Read Git URLs from CSV file
+	repositoryURLs, err := csv.ReadRepositoryURLs(cfg.RepoCSV)
+	if err != nil {
+		log.Fatal(err)
 	}
-	return 0
+
+	// Clone each repository into a separate directory
+	for _, url := range repositoryURLs {
+		// Generate a unique directory name based on the repository URL
+		repoName := filepath.Base(url)
+		repoDir := filepath.Join(cfg.CloneDir, repoName)
+		// Clone the repository into the directory
+		errorCode := cloneRepository(url, repoDir, nil, cfg)
+		if errorCode != 0 {
+			log.Printf("Error cloning repository %s: code %d\n", url, errorCode)
+			os.Exit(1)
+		}
+	}
 }
